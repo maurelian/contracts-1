@@ -173,12 +173,12 @@ abstract contract NestedMultisigBuilder is MultisigBase {
         bytes memory txData = abi.encodeCall(IMulticall3.aggregate3, (calls));
         console.log("---\nSimulation link:");
         // solhint-disable max-line-length
-        Simulation.logSimulationLink({_to: MULTICALL3_ADDRESS, _data: txData, _from: msg.sender, _overrides: overrides});
+        Simulation.logSimulationLink({_to: _target(), _data: txData, _from: msg.sender, _overrides: overrides});
 
         // Forge simulation of the data logged in the link. If the simulation fails
         // we revert to make it explicit that the simulation failed.
         Simulation.Payload memory simPayload =
-            Simulation.Payload({to: MULTICALL3_ADDRESS, data: txData, from: msg.sender, stateOverrides: overrides});
+            Simulation.Payload({to: _target(), data: txData, from: msg.sender, stateOverrides: overrides});
         Vm.AccountAccess[] memory accesses = Simulation.simulateFromSimPayload(simPayload);
         return (accesses, simPayload);
     }
@@ -205,7 +205,7 @@ abstract contract NestedMultisigBuilder is MultisigBase {
             )
         );
         bytes memory approveHashExec = _execTransationCalldata(
-            _signerSafe, approveHashData, Signatures.genPrevalidatedSignature(MULTICALL3_ADDRESS)
+            _signerSafe, approveHashData, Signatures.genPrevalidatedSignature(_target())
         );
         calls[0] = IMulticall3.Call3({target: _signerSafe, allowFailure: false, callData: approveHashExec});
 
@@ -219,7 +219,7 @@ abstract contract NestedMultisigBuilder is MultisigBase {
     function _overrides(address _signerSafe, address _safe) internal view returns (Simulation.StateOverride[] memory) {
         Simulation.StateOverride[] memory simOverrides = _simulationOverrides();
         Simulation.StateOverride[] memory overrides = new Simulation.StateOverride[](2 + simOverrides.length);
-        overrides[0] = _safeOverrides(_signerSafe, MULTICALL3_ADDRESS);
+        overrides[0] = _safeOverrides(_signerSafe, _target());
         overrides[1] = _safeOverrides(_safe, address(0));
         for (uint256 i = 0; i < simOverrides.length; i++) {
             overrides[i + 2] = simOverrides[i];
